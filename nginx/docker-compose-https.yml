@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: edu-nginx-certbot:latest
+    container_name: edu_nginx
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./free-edu-server.conf:/etc/nginx/conf.d/free-edu-server.conf
+      - ./letsencrypt:/etc/letsencrypt
+      - ./certbot-www:/var/www/html

@@ -1,0 +1,19 @@
+# docker-compose-ttyd.yml
+version: '3.9'
+
+services:
+  ttyd:
+    image: tsl0922/ttyd:latest
+    container_name: edu_ttyd
+    restart: unless-stopped
+    ports:
+      - "50082:7681"  # 외부:50082 → ttyd:7681
+    # ttyd 명령으로 bash를 직접 실행
+    command: ["ttyd", "-c", "tty:ttypass", "bash", "-l"]
+    environment:
+      - HTTP_USERNAME=ttyuser
+      - HTTP_PASSWORD=ttypass
+      # - ENABLE_SSL=true   # 나중에 reverse proxy + SSL을 쓰면 이건 뺀다
+    volumes:
+      - /home:/home:ro
+      - /etc:/etc:ro

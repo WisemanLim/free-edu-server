@@ -1,0 +1,32 @@
+# docker-compose-ide.yml
+version: '3.9'
+
+services:
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: edu_jupyter
+    restart: unless-stopped
+    ports:
+      - "50888:8888"  # 외부:50888 → Jupyter:8888
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    command: start-notebook.sh --NotebookApp.token='your-jupyter-token'
+
+  code-server:
+    image: codercom/code-server:latest
+    container_name: edu_code_server
+    restart: unless-stopped
+    ports:
+      - "50080:8080"  # 외부:50080 → code-server:8080
+    volumes:
+      - ./projects:/home/coder/project
+      - ./config-code/.config:/home/coder/.config
+      - ./config-code/.local:/home/coder/.local
+    environment:
+      PASSWORD: "your-codeserver-password"
+      user: "$(id -u):$(id -g)"
+
+networks:
+  default:

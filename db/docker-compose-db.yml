@@ -1,0 +1,53 @@
+# docker-compose-db.yml
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: edu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # - ./init-postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"   # 외부:5432 → 컨테이너:5432  (내부 포트는 그대로 5432 유지)
+    networks:
+      - db_net
+
+  mariadb:
+    image: mariadb:10
+    container_name: edu_mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass
+      MYSQL_DATABASE: mariadb_db
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      # - ./init-mariadb:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"   # 외부:3306 → 컨테이너:3306  (내부 포트는 3306 유지)
+    networks:
+      - db_net
+
+  adminer:
+    image: adminer:latest
+    container_name: edu_adminer
+    restart: unless-stopped
+    ports:
+      - "50081:8080"  # 외부:50081 → 컨테이너:8080
+    networks:
+      - db_net
+
+volumes:
+  postgres_data:
+  mariadb_data:
+
+networks:
+  db_net:
+    driver: bridge
