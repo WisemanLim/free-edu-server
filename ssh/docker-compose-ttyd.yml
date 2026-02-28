@@ -9,10 +9,11 @@ services:
     ports:
       - "50082:7681"  # 외부:50082 → ttyd:7681
     # ttyd 명령으로 bash를 직접 실행 (환경변수를 통해 계정 연동)
-    command: ["sh", "-c", "ttyd -c \"$${HTTP_USERNAME}:$${HTTP_PASSWORD}\" bash -l"]
+    # command: ["ttyd", "-W", "bash"]
+    command: ["ttyd", "-W", "-c", "ttyuser:ttypass", "bash", "-l"]
     environment:
-      - HTTP_USERNAME=ttyuser
-      - HTTP_PASSWORD=ttypass
+      - HTTP_USERNAME="ttyuser"
+      - HTTP_PASSWORD="ttypass"
       # - ENABLE_SSL=true   # 나중에 reverse proxy + SSL을 쓰면 이건 뺀다
     volumes:
       - /home:/home:ro
