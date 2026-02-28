@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     ports:
       - "50082:7681"  # 외부:50082 → ttyd:7681
-    # ttyd 명령으로 bash를 직접 실행
-    command: ["ttyd", "-c", "tty:ttypass", "bash", "-l"]
+    # ttyd 명령으로 bash를 직접 실행 (환경변수를 통해 계정 연동)
+    command: ["sh", "-c", "ttyd -c \"$${HTTP_USERNAME}:$${HTTP_PASSWORD}\" bash -l"]
     environment:
       - HTTP_USERNAME=ttyuser
       - HTTP_PASSWORD=ttypass
