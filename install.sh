@@ -74,11 +74,20 @@ prompt_replace() {
     local prefix=$4
     local match_str=$5
     
+    local existing_val
+    existing_val=$(grep -E "^[[:space:]]*${match_str}" "$file" | head -n 1 | sed -E "s/^[[:space:]]*${match_str}[[:space:]]*//; s/^[\"']//; s/[\"']$//")
+    if [ -n "$existing_val" ]; then
+        default_val="$existing_val"
+    fi
+    
     read -p "$prompt_msg [$default_val]: " user_val
     user_val=${user_val:-$default_val}
     
+    local escaped_val
+    escaped_val=$(echo "$user_val" | sed -e 's/[\/&]/\\&/g')
+    
     # E.g., match POSTGRES_USER: and replace the whole line
-    sed -i.bak -E "s/^[[:space:]]*${match_str}.*/${prefix}${user_val}/g" "$file"
+    sed -i.bak -E "s/^[[:space:]]*${match_str}.*/${prefix}\"${escaped_val}\"/g" "$file"
 }
 
 if [ -f "$DB_YML" ]; then
@@ -86,8 +95,11 @@ if [ -f "$DB_YML" ]; then
     prompt_replace "Enter PostgreSQL USER name" "dbuser" "$DB_YML" "      POSTGRES_USER: " "POSTGRES_USER:"
     prompt_replace "Enter PostgreSQL PASSWORD" "dbpass" "$DB_YML" "      POSTGRES_PASSWORD: " "POSTGRES_PASSWORD:"
     prompt_replace "Enter PostgreSQL DB name" "postgres_db" "$DB_YML" "      POSTGRES_DB: " "POSTGRES_DB:"
-    read -p "Enter PostgreSQL external port [5432]: " pg_port
-    pg_port=${pg_port:-5432}
+    local existing_pg_port
+    existing_pg_port=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:5432\"" "$DB_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):5432\".*/\1/")
+    local pg_port_def=${existing_pg_port:-5432}
+    read -p "Enter PostgreSQL external port [$pg_port_def]: " pg_port
+    pg_port=${pg_port:-$pg_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:5432\"/      - \"$pg_port:5432\"/g" "$DB_YML"
 
     echo "[MariaDB Configuration]"
@@ -95,30 +107,51 @@ if [ -f "$DB_YML" ]; then
     prompt_replace "Enter MariaDB USER name" "dbuser" "$DB_YML" "      MYSQL_USER: " "MYSQL_USER:"
     prompt_replace "Enter MariaDB PASSWORD" "dbpass" "$DB_YML" "      MYSQL_PASSWORD: " "MYSQL_PASSWORD:"
     prompt_replace "Enter MariaDB DB name" "mariadb_db" "$DB_YML" "      MYSQL_DATABASE: " "MYSQL_DATABASE:"
-    read -p "Enter MariaDB external port [3306]: " maria_port
-    maria_port=${maria_port:-3306}
+    local existing_maria_port
+    existing_maria_port=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:3306\"" "$DB_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):3306\".*/\1/")
+    local maria_port_def=${existing_maria_port:-3306}
+    read -p "Enter MariaDB external port [$maria_port_def]: " maria_port
+    maria_port=${maria_port:-$maria_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:3306\"/      - \"$maria_port:3306\"/g" "$DB_YML"
     
-    read -p "Enter Adminer external port [50081]: " adminer_port
-    adminer_port=${adminer_port:-50081}
+    local existing_adminer_port
+    existing_adminer_port=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:8080\"" "$DB_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):8080\".*/\1/")
+    local adminer_port_def=${existing_adminer_port:-50081}
+    read -p "Enter Adminer external port [$adminer_port_def]: " adminer_port
+    adminer_port=${adminer_port:-$adminer_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:8080\"/      - \"$adminer_port:8080\"/g" "$DB_YML"
 fi
 
 if [ -f "$IDE_YML" ]; then
     echo "[IDE Configuration]"
-    prompt_replace "Enter Jupyter Token" "your-jupyter-token" "$IDE_YML" "    command: start-notebook.sh --NotebookApp.token='" "'?" "command: start-notebook.sh --NotebookApp.token"  # this sed logic can be tricky, using custom sed
+    local existing_jtoken
+    existing_jtoken=$(grep -E "^[[:space:]]*command: start-notebook.sh --NotebookApp.token=" "$IDE_YML" | head -n 1 | sed -E "s/.*--NotebookApp.token=//; s/^[\"']//; s/[\"']$//")
+    local jtoken_def="your-jupyter-token"
+    if [ -n "$existing_jtoken" ]; then
+        jtoken_def="$existing_jtoken"
+    fi
     
-    read -p "Enter Jupyter Token [your-jupyter-token]: " jupyter_token
-    jupyter_token=${jupyter_token:-"your-jupyter-token"}
-    sed -i.bak -E "s/^[[:space:]]*command: start-notebook.sh --NotebookApp.token=.*/    command: start-notebook.sh --NotebookApp.token='${jupyter_token}'/g" "$IDE_YML"
+    read -p "Enter Jupyter Token [$jtoken_def]: " jupyter_token
+    jupyter_token=${jupyter_token:-$jtoken_def}
     
-    read -p "Enter Jupyter external port [50888]: " jupyter_port
-    jupyter_port=${jupyter_port:-50888}
+    local escaped_jtoken
+    escaped_jtoken=$(echo "$jupyter_token" | sed -e 's/[\/&]/\\&/g')
+    sed -i.bak -E "s/^[[:space:]]*command: start-notebook.sh --NotebookApp.token=.*/    command: start-notebook.sh --NotebookApp.token=\"${escaped_jtoken}\"/g" "$IDE_YML"
+    
+    local existing_jport
+    existing_jport=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:8888\"" "$IDE_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):8888\".*/\1/")
+    local jupyter_port_def=${existing_jport:-50888}
+    read -p "Enter Jupyter external port [$jupyter_port_def]: " jupyter_port
+    jupyter_port=${jupyter_port:-$jupyter_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:8888\"/      - \"$jupyter_port:8888\"/g" "$IDE_YML"
 
-    prompt_replace "Enter Code-Server Password" "\"your-codeserver-password\"" "$IDE_YML" "      PASSWORD: " "PASSWORD:"
-    read -p "Enter Code-Server external port [50080]: " code_port
-    code_port=${code_port:-50080}
+    prompt_replace "Enter Code-Server Password" "your-codeserver-password" "$IDE_YML" "      PASSWORD: " "PASSWORD:"
+    
+    local existing_code_port
+    existing_code_port=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:8080\"" "$IDE_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):8080\".*/\1/")
+    local code_port_def=${existing_code_port:-50080}
+    read -p "Enter Code-Server external port [$code_port_def]: " code_port
+    code_port=${code_port:-$code_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:8080\"/      - \"$code_port:8080\"/g" "$IDE_YML"
 fi
 
@@ -126,8 +159,11 @@ if [ -f "$SSH_YML" ]; then
     echo "[SSH (ttyd) Configuration]"
     prompt_replace "Enter ttyd User name" "ttyuser" "$SSH_YML" "      - HTTP_USERNAME=" "- HTTP_USERNAME="
     prompt_replace "Enter ttyd Password" "ttypass" "$SSH_YML" "      - HTTP_PASSWORD=" "- HTTP_PASSWORD="
-    read -p "Enter ttyd external port [50082]: " ttyd_port
-    ttyd_port=${ttyd_port:-50082}
+    local existing_ttyd_port
+    existing_ttyd_port=$(grep -E "^[[:space:]]*-[[:space:]]*\"[0-9]+:7681\"" "$SSH_YML" | head -n 1 | sed -E "s/.*\"([0-9]+):7681\".*/\1/")
+    local ttyd_port_def=${existing_ttyd_port:-50082}
+    read -p "Enter ttyd external port [$ttyd_port_def]: " ttyd_port
+    ttyd_port=${ttyd_port:-$ttyd_port_def}
     sed -i.bak -E "s/^[[:space:]]*-[[:space:]]*\"[0-9]+:7681\"/      - \"$ttyd_port:7681\"/g" "$SSH_YML"
 fi
 
