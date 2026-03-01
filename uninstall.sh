@@ -1,7 +1,19 @@
 #!/bin/bash
 set -e
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${BASH_SOURCE[0]}" == "" || "${BASH_SOURCE[0]}" == "bash" ]]; then
+    DIR="$PWD/free-edu-server"
+else
+    DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" 2>/dev/null || echo ".")" && pwd)"
+fi
+
+if [ ! -d "$DIR" ]; then
+    echo "Directory $DIR not found. Please run uninstall from the correct location."
+    exit 1
+fi
+
+cd "$DIR"
+
 
 echo "=== Uninstalling Services and Configurations ==="
 echo "Note: Docker/Docker-Compose (Pre-install) will NOT be uninstalled."

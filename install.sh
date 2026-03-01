@@ -1,7 +1,41 @@
 #!/bin/bash
 set -e
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "${BASH_SOURCE[0]}" == "" || "${BASH_SOURCE[0]}" == "bash" ]]; then
+    DIR="$PWD/free-edu-server"
+    mkdir -p "$DIR"
+else
+    DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" 2>/dev/null || echo ".")" && pwd)"
+fi
+
+cd "$DIR"
+
+REPO_BASE_URL="https://raw.githubusercontent.com/WisemanLim/free-edu-server/refs/heads/main"
+
+download_if_missing() {
+    local filepath=$1
+    if [ ! -f "$DIR/$filepath" ]; then
+        echo "Downloading $filepath..."
+        mkdir -p "$(dirname "$DIR/$filepath")"
+        curl -fsSL "$REPO_BASE_URL/$filepath" -o "$DIR/$filepath"
+        if [[ "$filepath" == *.sh ]]; then
+            chmod +x "$DIR/$filepath"
+        fi
+    fi
+}
+
+echo "=== Checking missing files for remote installation ==="
+download_if_missing "db/docker-compose-db.yml"
+download_if_missing "ide/docker-compose-ide.yml"
+download_if_missing "ssh/docker-compose-ttyd.yml"
+download_if_missing "nginx/Dockerfile"
+download_if_missing "nginx/docker-compose-https.yml"
+download_if_missing "nginx/free-edu-server.conf.template"
+download_if_missing "nginx/setup-nginx.sh"
+download_if_missing "nginx/uninstall-nginx.sh"
+download_if_missing "uninstall.sh"
+download_if_missing "install.sh"
+
 
 # 1. OS check
 if [ -f /etc/os-release ]; then

@@ -48,9 +48,20 @@ free-edu-server/
 
 ### 1단계: 설치 및 배포 구동
 
-해당 깃 저장소를 클론한 후, 스크립트 디렉토리 내에서 설치 스크립트를 실행합니다. 권한이 필요하여 자동으로 `sudo` 명령을 사용하므로, 사용자는 `sudo` 권한을 가진 유저여야 합니다.
+권한이 필요하여 자동으로 `sudo` 명령을 사용하므로, 사용자는 `sudo` 권한을 가진 유저여야 합니다.
+
+**방법 A: 원격 설치 (단일 명령어 실행)**
+가장 간단한 방법으로, 현재 실행 중인 디렉토리 하위에 `free-edu-server` 폴더를 생성하고 필요한 파일을 동적으로 다운받아 설치를 시작합니다.
 
 ```bash
+curl -s https://raw.githubusercontent.com/WisemanLim/free-edu-server/refs/heads/main/install.sh | bash
+```
+
+**방법 B: 직접 다운로드 및 실행 (Git Clone)**
+해당 깃 저장소를 클론한 후, 직접 설치 스크립트를 실행하실 수도 있습니다.
+
+```bash
+git clone https://github.com/WisemanLim/free-edu-server.git
 cd free-edu-server
 chmod +x install.sh uninstall.sh nginx/*.sh
 ./install.sh
@@ -86,6 +97,12 @@ docker restart edu_postgres
 
 테스트를 완료하거나 환경 설정을 걷어내고 싶을 경우 다음 스크립트를 실행합니다.
 
+**방법 A: 원격 롤백 (단일 명령어 실행)**
+```bash
+curl -s https://raw.githubusercontent.com/WisemanLim/free-edu-server/refs/heads/main/uninstall.sh | bash
+```
+
+**방법 B: 로컬 롤백 (다운로드된 폴더 내에서)**
 ```bash
 ./uninstall.sh
 ```
